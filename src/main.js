@@ -17,6 +17,9 @@ function login(email, password) {
   .then(() =>
     onNavItemClick('/newsfeed')
   )
+  .then(() =>
+    printPosts()
+  )
   .catch(function(error) {
   // Handle Errors here.
   var errorCode = error.code;
@@ -44,6 +47,7 @@ function register(email, password){
       //I call my save data function and send the uid
       saveData(uid, email, password);
       onNavItemClick('/newsfeed');
+      printPosts();
     }
   });
 }
@@ -83,20 +87,83 @@ function publish() {
 //Function to create new post
 function writeNewPost(uid, textpost) {
   // A post entry.
-  var postData = {
-    body: textpost,
-    starCount: 0,
+
+  firebase.database().ref('/users/' + uid).once('value')
+  .then(function(snapshot) {
+    //Saving the name of the username, so we can save it in general posts as well
+    let username = (snapshot.val().nombre + " " + snapshot.val().apellido);
+    //Setting the data object
+    let postData = {
+      usuario: username,
+      body: textpost,
+      starCount: 0,
+    };
+    // Get a key for a new Post.
+    var newPostKey = firebase.database().ref().child('posts').push().key;
+
+    // Write the new post's data simultaneously in the posts list and the user's post list.
+    var updates = {};
+    //Pushing the posts to a common place, so we can build our newsfeed
+    updates['/posts/' + newPostKey] = postData;
+    //Saving the posts directly under the current user
+    updates['/users/' + uid + '/posts/' + newPostKey] = postData;
+
+    return firebase.database().ref().update(updates);
+  });
+}
+
+function printPosts(){
+
+  //Grab current user
+  const user = firebase.auth().currentUser.uid;
+  //Getting general posts list
+  firebase.database().ref('/posts').on('value', function(snapshot) {
+    let array = snapshotToArray(snapshot);
+    array.reverse();
+
+    print(array);
+
+    function print(array){
+      document.getElementById("allPosts").innerHTML = `
+      ${array.map(postTemplate).join("")}`;
+    }
+
+  });
+
+  function postTemplate(post){
+    return `
+    <div class="post">
+      <h2 class="createPostTitle">${post.usuario}</h2>
+      <textarea class="postContent" name="name" rows="6" cols="40" id="postContent">${post.body}</textarea>
+    </div>
+    `;
+  }
+
+  function snapshotToArray(snapshot) {
+      var returnArr = [];
+
+      snapshot.forEach(function(childSnapshot) {
+          var item = childSnapshot.val();
+          item.key = childSnapshot.key;
+
+          returnArr.push(item);
+      });
+      return returnArr;
   };
+}
 
-  // Get a key for a new Post.
-  var newPostKey = firebase.database().ref().child('posts').push().key;
+function printProfile() {
+  let uid = firebase.auth().currentUser.uid;
 
-  // Write the new post's data simultaneously in the posts list and the user's post list.
-  var updates = {};
-  //Pushing the posts to a common place, so we can build our newsfeed
-  updates['/posts/' + newPostKey] = postData;
-  //Saving the posts directly under the current user
-  updates['/users/' + uid + '/posts/' + newPostKey] = postData;
-
-  return firebase.database().ref().update(updates);
+  firebase.database().ref('/users/' + uid).once('value').then(function(snapshot) {
+    //Saving the user's data in variables before printing
+    let name = snapshot.val().nombre + " " + snapshot.val().apellido;
+    let ciudad = snapshot.val().ciudad;
+    let email = snapshot.val().email;
+    //Printing in DOM the profile
+    document.getElementById("profileName").innerHTML = name;
+    document.getElementById("profileCiudad").innerHTML = ciudad;
+    document.getElementById("profileEmail").innerHTML = email;
+  // ...
+  });
 }
