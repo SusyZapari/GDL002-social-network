@@ -21,7 +21,7 @@ let onNavItemClick = (pathName) => {
   .then(() => addEventListeners());
 }
 //My fetchContent function, which gets the data in my htmls and translates it to text, which I then can use
-const fetchContent = (url) => fetch(url)
+ window.fetchContent = (url) => fetch(url)
     .then(function(response) {
         // When the page is loaded convert it to text
         return response.text()

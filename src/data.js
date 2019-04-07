@@ -1,6 +1,4 @@
-initFirebase();
-
-function initFirebase(){
+window.initFirebase = function(){
   // Initialize Firebase
   let config = {
     apiKey: "AIzaSyC69KcGgAiDrajAsi-Fbi2tjvrRMHzH9So",
@@ -10,5 +8,11 @@ function initFirebase(){
     storageBucket: "veggiehappy-c15fa.appspot.com",
     messagingSenderId: "982911036256"
   };
-  firebase.initializeApp(config);
+
+  // Prevent this execution if not mocked yet in unit test
+  if (typeof firebase !== 'undefined') {
+    firebase.initializeApp(config);
+  }
 }
+
+initFirebase();

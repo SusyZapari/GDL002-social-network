@@ -65,7 +65,7 @@ function logout() {
     });
 }
 //Function to record new user data in database
-function saveData(uid, email, password){
+ window.saveData = function (uid, email, password){
   let user = {
     nombre: document.getElementById('name').value,
     apellido: document.getElementById('lastName').value,
